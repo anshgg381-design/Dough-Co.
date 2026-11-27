@@ -1,0 +1,6 @@
+{
+  "name": "Dough & Co — Modern Pizzeria & Taqueria",
+  "description": "Dough & Co. — pizzeria, taqueria and coffee bar in Model Town, Panipat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
