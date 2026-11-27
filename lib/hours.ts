@@ -162,3 +162,75 @@ export function buildWhatsAppReserveUrl(values: ReserveFormValues): string {
 
   return `https://wa.me/${siteConfig.phone.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
+
+export const GROUP_OCCASIONS = [
+  'Birthday',
+  'Family Dinner',
+  'Friends Gathering',
+  'Team / Meetup',
+  'Custom Spread',
+] as const;
+
+export type GroupOccasion = (typeof GROUP_OCCASIONS)[number];
+
+export interface GroupBookingValues {
+  name: string;
+  date: string;
+  time: string;
+  guests: string;
+  occasion: GroupOccasion;
+  notes: string;
+}
+
+export interface GroupBookingErrors {
+  name?: string;
+  date?: string;
+  time?: string;
+  guests?: string;
+}
+
+export function validateGroupBookingForm(
+  values: GroupBookingValues
+): GroupBookingErrors {
+  const errors: GroupBookingErrors = {};
+
+  if (!values.name.trim() || values.name.trim().length < 2) {
+    errors.name = 'Enter host name.';
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(values.date)) {
+    errors.date = 'Choose a date.';
+  }
+
+  const validSlots = values.date
+    ? generateReservationTimeSlots(values.date)
+    : [];
+  if (!values.time || (validSlots.length > 0 && !validSlots.includes(values.time))) {
+    errors.time = 'Select an available time.';
+  }
+
+  const guestCount = Number.parseInt(values.guests, 10);
+  if (!Number.isFinite(guestCount) || guestCount < 6 || guestCount > 60) {
+    errors.guests = 'Enter between 6 and 60 guests for group bookings.';
+  }
+
+  return errors;
+}
+
+export function buildWhatsAppGroupUrl(values: GroupBookingValues): string {
+  const lines = [
+    `Hi ${siteConfig.name}, I would like to inquire about a group / party booking.`,
+    `Host Name: ${values.name.trim()}`,
+    `Occasion: ${values.occasion}`,
+    `Guests: ${values.guests}`,
+    `Date: ${values.date}`,
+    `Preferred Time: ${values.time}`,
+  ];
+
+  const trimmedNotes = values.notes.trim();
+  if (trimmedNotes.length > 0) {
+    lines.push(`Notes: ${trimmedNotes}`);
+  }
+
+  return `https://wa.me/${siteConfig.phone.whatsappNumber}?text=${encodeURIComponent(lines.join('\n'))}`;
+}

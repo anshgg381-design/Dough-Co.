@@ -7,7 +7,7 @@ export default function MobileActionBar() {
   return (
     <div
       data-testid="mobile-action-bar"
-      className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-[#FFFFFF] border-t border-[#0B0A09]"
+      className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-[#FFFFFF] border-t border-[#0B0A09] print:hidden"
     >
       <div className="grid grid-cols-3 divide-x divide-[#0B0A09]">
         <a

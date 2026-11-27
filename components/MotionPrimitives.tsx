@@ -1,13 +1,7 @@
 'use client';
 
-import { useRef, type ReactNode } from 'react';
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useSpring,
-  useTransform,
-} from 'motion/react';
+import type { ReactNode } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 
 export const EDITORIAL_EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -26,12 +20,12 @@ export function RevealBlock({
 
   return (
     <motion.div
-      initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 26 }}
-      whileInView={prefersReduced ? { opacity: 1 } : { opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 'some' }}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.12 }}
       transition={{
-        duration: prefersReduced ? 0 : 0.78,
-        delay,
+        duration: prefersReduced ? 0 : 0.52,
+        delay: prefersReduced ? 0 : Math.min(delay, 0.14),
         ease: EDITORIAL_EASE,
       }}
       className={className}
@@ -48,8 +42,8 @@ interface BlurFocusTextProps {
 }
 
 /**
- * Signature Le Pain Quotidien depth-of-field blur-to-sharp reveal.
- * Words glide into crisp editorial focus smoothly on mount or viewport entry.
+ * Crisp GPU-composited editorial text reveal inspired by lepainquotidien.com.
+ * Uses transform + opacity exclusively (zero filter:blur rasterization lag).
  */
 export function BlurFocusText({
   children,
@@ -60,20 +54,12 @@ export function BlurFocusText({
 
   return (
     <motion.div
-      initial={
-        prefersReduced
-          ? { opacity: 1 }
-          : { opacity: 0, y: 20, filter: 'blur(10px)' }
-      }
-      whileInView={
-        prefersReduced
-          ? { opacity: 1 }
-          : { opacity: 1, y: 0, filter: 'blur(0px)' }
-      }
-      viewport={{ once: true, amount: 'some' }}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
       transition={{
-        duration: prefersReduced ? 0 : 0.85,
-        delay,
+        duration: prefersReduced ? 0 : 0.56,
+        delay: prefersReduced ? 0 : Math.min(delay, 0.14),
         ease: EDITORIAL_EASE,
       }}
       className={className}
@@ -91,34 +77,14 @@ interface ParallaxFrameProps {
 }
 
 /**
- * Scroll-scrubbed architectural photo frame with silky spring parallax and gentle zoom.
+ * Clean architectural photo frame container without heavy per-frame scroll listeners.
  */
 export function ParallaxFrame({
   children,
   className = '',
-  scaleRange = [1.08, 1.0],
-  yRange = [-16, 16],
 }: ParallaxFrameProps) {
-  const frameRef = useRef<HTMLDivElement>(null);
-  const prefersReduced = useReducedMotion();
-
-  const { scrollYProgress } = useScroll({
-    target: frameRef,
-    offset: ['start end', 'end start'],
-  });
-  const smooth = useSpring(scrollYProgress, { stiffness: 140, damping: 28 });
-  const scale = useTransform(smooth, [0, 1], scaleRange);
-  const y = useTransform(smooth, [0, 1], yRange);
-
   return (
-    <div ref={frameRef} className={`relative overflow-hidden ${className}`}>
-      <motion.div
-        style={prefersReduced ? undefined : { scale, y }}
-        className="relative w-full h-full will-change-transform"
-      >
-        {children}
-      </motion.div>
-    </div>
+    <div className={`relative overflow-hidden ${className}`}>{children}</div>
   );
 }
 
@@ -129,13 +95,12 @@ interface HoverScaleFrameProps {
 }
 
 /**
- * Refined Framer Motion hover-scaling wrapper for homepage image panels.
- * Uses a smooth editorial cubic-bezier curve and respects prefers-reduced-motion.
+ * GPU-composited Framer Motion hover-scaling wrapper for homepage image panels.
  */
 export function HoverScaleFrame({
   children,
   className = '',
-  scale = 1.045,
+  scale = 1.04,
 }: HoverScaleFrameProps) {
   const prefersReduced = useReducedMotion();
 
@@ -143,8 +108,8 @@ export function HoverScaleFrame({
     <motion.div
       data-cursor="view"
       whileHover={prefersReduced ? undefined : { scale }}
-      transition={{ duration: 0.65, ease: EDITORIAL_EASE }}
-      className={`relative w-full h-full will-change-transform ${className}`}
+      transition={{ duration: 0.42, ease: EDITORIAL_EASE }}
+      className={`relative w-full h-full ${className}`}
     >
       {children}
     </motion.div>
@@ -170,10 +135,10 @@ export function ArchitecturalRule({
       aria-hidden="true"
       initial={prefersReduced ? { scaleX: 1 } : { scaleX: 0 }}
       whileInView={{ scaleX: 1 }}
-      viewport={{ once: true, amount: 'some' }}
+      viewport={{ once: true, amount: 0.2 }}
       transition={{
-        duration: prefersReduced ? 0 : 0.75,
-        delay,
+        duration: prefersReduced ? 0 : 0.55,
+        delay: prefersReduced ? 0 : Math.min(delay, 0.12),
         ease: EDITORIAL_EASE,
       }}
       style={{ transformOrigin: '0% 50%' }}
@@ -214,15 +179,15 @@ export function ScriptOverlapHeading({
         initial={
           prefersReduced
             ? { opacity: 1 }
-            : { opacity: 0, y: 12, rotate: -4 }
+            : { opacity: 0, y: 10, rotate: -3 }
         }
         whileInView={
           prefersReduced
             ? { opacity: 1 }
             : { opacity: 1, y: 0, rotate: -2 }
         }
-        viewport={{ once: true, amount: 'some' }}
-        transition={{ duration: 0.7, ease: EDITORIAL_EASE }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.48, ease: EDITORIAL_EASE }}
         className={`relative z-10 font-script font-semibold text-[34px] sm:text-[44px] leading-none select-none -mb-2 sm:-mb-3 ${
           dark ? 'text-[#F5C300]' : 'text-[#D99B00]'
         }`}
@@ -230,7 +195,7 @@ export function ScriptOverlapHeading({
         {script}
       </motion.span>
 
-      <BlurFocusText delay={0.08}>
+      <BlurFocusText delay={0.05}>
         <HeadingTag
           id={id}
           className={`font-display font-bold uppercase tracking-[-0.015em] leading-[0.94] text-[clamp(2.6rem,5.2vw,4.75rem)] ${

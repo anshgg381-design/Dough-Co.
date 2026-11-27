@@ -12,6 +12,7 @@ interface SiteFooterProps {
 const EXPLORE_LINKS = [
   { label: 'Menu', href: '/menu' },
   { label: 'Half & Half', href: '#half-and-half' },
+  { label: 'Drink pairings', href: '#pairings' },
   { label: 'Our space', href: '#our-space' },
 ] as const;
 
@@ -34,7 +35,7 @@ export default function SiteFooter({ isSubpage = false }: SiteFooterProps) {
     isSubpage && href.startsWith('#') ? `/${href}` : href;
 
   return (
-    <footer className="bg-[#000000] text-[#FFFFFF] border-t border-[#0B0A09] pt-16 lg:pt-20 pb-24 md:pb-12">
+    <footer className="bg-[#000000] text-[#FFFFFF] border-t border-[#0B0A09] pt-16 lg:pt-20 pb-24 md:pb-12 print:hidden">
       <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
         {/* Centered circular Dough & Co. logo crest */}
         <div className="flex justify-center">

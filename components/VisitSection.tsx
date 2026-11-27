@@ -8,6 +8,7 @@ import {
   RevealBlock,
   ScriptOverlapHeading,
 } from '@/components/MotionPrimitives';
+import VisitMap from '@/components/VisitMap';
 
 export default function VisitSection() {
   const [status, setStatus] = useState<LiveOpenStatus | null>(null);
@@ -27,7 +28,7 @@ export default function VisitSection() {
     >
       <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-          {/* Left column: Address, cost, and primary links */}
+          {/* Left column: Address and primary links */}
           <div className="lg:col-span-6">
             <ScriptOverlapHeading
               id="visit-heading"
@@ -36,7 +37,7 @@ export default function VisitSection() {
               align="left"
             />
 
-            <RevealBlock delay={0.08}>
+            <RevealBlock delay={0.06}>
               <address className="not-italic mt-7 text-[18px] sm:text-[20px] font-medium leading-relaxed text-[#0B0A09] max-w-[38ch]">
                 {siteConfig.address.line1}
                 <br />
@@ -85,8 +86,8 @@ export default function VisitSection() {
             </RevealBlock>
           </div>
 
-          {/* Right column: Hours table with today highlighted & Zomato footnote */}
-          <RevealBlock delay={0.1} className="lg:col-span-6 lg:pt-4">
+          {/* Right column: Hours table with today highlighted */}
+          <RevealBlock delay={0.08} className="lg:col-span-6 lg:pt-4">
             <div className="border border-[#0B0A09] bg-[#FFFFFF] p-6 sm:p-8">
               <div className="flex flex-wrap items-baseline justify-between gap-3 pb-4 border-b border-[#0B0A09]">
                 <h3 className="font-display text-[26px] font-bold uppercase tracking-[-0.01em] text-[#0B0A09]">
@@ -134,6 +135,11 @@ export default function VisitSection() {
               </dl>
             </div>
           </RevealBlock>
+        </div>
+
+        {/* Interactive Google Map anchored inside a sharp 1px architectural frame */}
+        <div className="mt-12 lg:mt-14">
+          <VisitMap />
         </div>
       </div>
     </section>

@@ -23,7 +23,7 @@ export default function ScrollProgressBar() {
     <div
       aria-hidden="true"
       data-testid="scroll-progress-track"
-      className="pointer-events-none fixed top-0 inset-x-0 z-[60] h-[2px] bg-[#0B0A09]/8"
+      className="pointer-events-none fixed top-0 inset-x-0 z-[60] h-[2px] bg-[#0B0A09]/8 print:hidden"
     >
       <motion.div
         data-testid="scroll-progress-bar"

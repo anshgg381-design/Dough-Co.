@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   motion,
   useMotionValue,
@@ -32,9 +32,9 @@ function getFinePointerServerSnapshot() {
 }
 
 /**
- * Minimal architectural custom cursor tailored to Dough & Co.'s
- * Le Pain Quotidien editorial palette (jet ink + warm honey-gold).
- * Activates exclusively on desktop fine-pointer devices and respects reduced motion.
+ * Zero-lag GPU-composited architectural cursor for desktop fine pointers.
+ * Uses pure GPU scale transforms (no width/height layout reflows) and ref-gated
+ * variant transitions so mouse movement never schedules redundant React renders.
  */
 export default function CustomCursor() {
   const prefersReduced = useReducedMotion();
@@ -50,14 +50,16 @@ export default function CustomCursor() {
   const [variant, setVariant] = useState<CursorVariant>('default');
   const [label, setLabel] = useState('VIEW');
 
+  const visibleRef = useRef(false);
+  const variantRef = useRef<CursorVariant>('default');
+  const labelRef = useRef('VIEW');
+
   const pointerX = useMotionValue(-100);
   const pointerY = useMotionValue(-100);
 
-  // Instantaneous crisp inner dot + silky spring-physics outer ring
-  const dotX = useSpring(pointerX, { stiffness: 900, damping: 45, mass: 0.25 });
-  const dotY = useSpring(pointerY, { stiffness: 900, damping: 45, mass: 0.25 });
-  const ringX = useSpring(pointerX, { stiffness: 260, damping: 26, mass: 0.55 });
-  const ringY = useSpring(pointerY, { stiffness: 260, damping: 26, mass: 0.55 });
+  // Crisp single spring for outer architectural ring; center dot locks directly to pointer
+  const ringX = useSpring(pointerX, { stiffness: 360, damping: 28, mass: 0.35 });
+  const ringY = useSpring(pointerY, { stiffness: 360, damping: 28, mass: 0.35 });
 
   useEffect(() => {
     if (!enabled) {
@@ -67,48 +69,65 @@ export default function CustomCursor() {
 
     document.body.classList.add('has-custom-cursor');
 
+    const setCursorVisibility = (nextVisible: boolean) => {
+      if (visibleRef.current !== nextVisible) {
+        visibleRef.current = nextVisible;
+        setVisible(nextVisible);
+      }
+    };
+
+    const setCursorVariant = (nextVariant: CursorVariant, nextLabel?: string) => {
+      if (variantRef.current !== nextVariant) {
+        variantRef.current = nextVariant;
+        setVariant(nextVariant);
+      }
+      if (nextLabel !== undefined && labelRef.current !== nextLabel) {
+        labelRef.current = nextLabel;
+        setLabel(nextLabel);
+      }
+    };
+
     const handleMove = (event: MouseEvent) => {
       pointerX.set(event.clientX);
       pointerY.set(event.clientY);
-      setVisible(true);
+      setCursorVisibility(true);
     };
 
     const handleOver = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       if (!target) {
-        setVariant('default');
+        setCursorVariant('default');
         return;
       }
 
       if (target.closest(TEXT_INPUT_SELECTOR)) {
-        setVariant('hidden');
+        setCursorVariant('hidden');
         return;
       }
 
       if (target.closest(INTERACTIVE_SELECTOR)) {
-        setVariant('interactive');
+        setCursorVariant('interactive');
         return;
       }
 
       const viewEl = target.closest<HTMLElement>('[data-cursor="view"]');
       if (viewEl) {
-        setLabel(viewEl.dataset.cursorLabel || 'VIEW');
-        setVariant('view');
+        setCursorVariant('view', viewEl.dataset.cursorLabel || 'VIEW');
         return;
       }
 
-      setVariant('default');
+      setCursorVariant('default');
     };
 
     const handleDown = () => setPressed(true);
     const handleUp = () => setPressed(false);
-    const handleLeave = () => setVisible(false);
-    const handleEnter = () => setVisible(true);
+    const handleLeave = () => setCursorVisibility(false);
+    const handleEnter = () => setCursorVisibility(true);
 
     window.addEventListener('mousemove', handleMove, { passive: true });
     document.addEventListener('mouseover', handleOver, { passive: true });
-    window.addEventListener('mousedown', handleDown);
-    window.addEventListener('mouseup', handleUp);
+    window.addEventListener('mousedown', handleDown, { passive: true });
+    window.addEventListener('mouseup', handleUp, { passive: true });
     document.documentElement.addEventListener('mouseleave', handleLeave);
     document.documentElement.addEventListener('mouseenter', handleEnter);
 
@@ -127,27 +146,24 @@ export default function CustomCursor() {
     return null;
   }
 
-  const ringSize =
-    variant === 'view' ? 74 : variant === 'interactive' ? 48 : 32;
   const isVisible = visible && variant !== 'hidden';
+  const baseScale =
+    variant === 'view' ? 1 : variant === 'interactive' ? 0.66 : 0.44;
+  const ringScale = pressed ? baseScale * 0.86 : baseScale;
 
   return (
     <div
       aria-hidden="true"
       data-testid="custom-cursor"
       data-variant={variant}
-      className="pointer-events-none fixed inset-0 z-[100] hidden lg:block"
+      className="pointer-events-none fixed inset-0 z-[100] hidden lg:block print:hidden"
     >
-      {/* Trailing architectural outer ring / editorial image badge */}
+      {/* Fixed-box 72x72 outer ring scaled purely with GPU transform (zero layout reflow) */}
       <motion.div
         style={{ x: ringX, y: ringY }}
         animate={{
-          width: ringSize,
-          height: ringSize,
-          marginLeft: -ringSize / 2,
-          marginTop: -ringSize / 2,
+          scale: ringScale,
           opacity: isVisible ? 1 : 0,
-          scale: pressed ? 0.86 : 1,
           backgroundColor:
             variant === 'view'
               ? 'rgba(11, 10, 9, 0.92)'
@@ -161,30 +177,30 @@ export default function CustomCursor() {
                 ? '#D99B00'
                 : 'rgba(11, 10, 9, 0.72)',
         }}
-        transition={{ duration: 0.24, ease: EDITORIAL_EASE }}
-        className="fixed top-0 left-0 flex items-center justify-center rounded-full border will-change-transform"
+        transition={{ duration: 0.2, ease: EDITORIAL_EASE }}
+        className="fixed top-0 left-0 -ml-[36px] -mt-[36px] flex h-[72px] w-[72px] items-center justify-center rounded-full border will-change-transform"
       >
         <motion.span
           animate={{
             opacity: variant === 'view' ? 1 : 0,
             scale: variant === 'view' ? 1 : 0.75,
           }}
-          transition={{ duration: 0.18, ease: EDITORIAL_EASE }}
+          transition={{ duration: 0.16, ease: EDITORIAL_EASE }}
           className="px-2 text-center text-[10px] font-semibold uppercase leading-tight tracking-[0.16em] text-[#FFFFFF] select-none"
         >
           {label}
         </motion.span>
       </motion.div>
 
-      {/* Instantaneous crisp center ink dot */}
+      {/* Zero-lag hardware-locked center ink dot */}
       <motion.div
-        style={{ x: dotX, y: dotY }}
+        style={{ x: pointerX, y: pointerY }}
         animate={{
           opacity: isVisible && variant !== 'view' ? 1 : 0,
           scale: pressed ? 0.75 : variant === 'interactive' ? 0.55 : 1,
           backgroundColor: variant === 'interactive' ? '#D99B00' : '#0B0A09',
         }}
-        transition={{ duration: 0.16, ease: EDITORIAL_EASE }}
+        transition={{ duration: 0.14, ease: EDITORIAL_EASE }}
         className="fixed top-0 left-0 -ml-[3px] -mt-[3px] h-[6px] w-[6px] rounded-full will-change-transform"
       />
     </div>

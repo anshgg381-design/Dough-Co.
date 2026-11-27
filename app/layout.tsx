@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Antonio, Caveat, DM_Sans } from 'next/font/google';
 import { siteConfig, buildRestaurantJsonLd } from '@/data/siteConfig';
 import CustomCursor from '@/components/CustomCursor';
+import MapsQuotaBanner from '@/components/MapsQuotaBanner';
 import './globals.css';
 
 const antonio = Antonio({
@@ -63,6 +64,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <MapsQuotaBanner />
         <CustomCursor />
         {children}
       </body>

@@ -63,3 +63,29 @@
     cursor: text;
   }
 }
+
+/* Clean broadsheet print stylesheet for Dough & Co. printable menu */
+@media print {
+  @page {
+    size: auto;
+    margin: 12mm;
+  }
+
+  html,
+  body,
+  .plaster-canvas {
+    background: #FFFFFF !important;
+    color: #0B0A09 !important;
+    cursor: auto !important;
+  }
+
+  .print-keep-with-next {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .print-menu-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

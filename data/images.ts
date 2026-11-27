@@ -6,6 +6,7 @@ import interiorBar from '@/public/assets/aistudio/unnamed__1__b2fb7931.webp';
 import diningCorner from '@/public/assets/aistudio/unnamed__2__3113b3a6.webp';
 import tableSetting from '@/public/assets/aistudio/unnamed__3__fae16493.webp';
 import heroTakeaway from '@/public/assets/aistudio/imgi_33_858088570_17949135600347467_3931433580537218318_n_50fca20d.jpg';
+import heroStorefront from '@/public/assets/aistudio/images__1__ab49a1e8.jpeg';
 
 import heroPizza from '@/public/images/zomato/zomato-cover.jpeg';
 import burrataSalad from '@/public/images/zomato/burrata-and-rocket-salad.jpeg';
@@ -22,6 +23,7 @@ import chickenBolognese from '@/public/images/zomato/chicken-bolognese-pasta.jpe
 
 export const siteImages = {
   logoBadge,
+  heroStorefront,
   heroTakeaway,
   heroPizza,
   storefront,

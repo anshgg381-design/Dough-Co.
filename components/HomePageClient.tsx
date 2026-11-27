@@ -9,6 +9,7 @@ import FeaturedDishesSection from '@/components/FeaturedDishesSection';
 import HalfAndHalfSection from '@/components/HalfAndHalfSection';
 import OurSpaceSection from '@/components/OurSpaceSection';
 import CustomerReviewsSection from '@/components/CustomerReviewsSection';
+import InstagramFeedSection from '@/components/InstagramFeedSection';
 import ReserveSection from '@/components/ReserveSection';
 import VisitSection from '@/components/VisitSection';
 import SiteFooter from '@/components/SiteFooter';
@@ -27,6 +28,7 @@ export default function HomePageClient() {
           <HalfAndHalfSection />
           <OurSpaceSection />
           <CustomerReviewsSection />
+          <InstagramFeedSection />
           <ReserveSection />
           <VisitSection />
         </main>

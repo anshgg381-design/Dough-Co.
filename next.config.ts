@@ -8,14 +8,26 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Allow access to remote image placeholder.
+  // Allow access to remote image placeholder and Instagram media.
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
-        pathname: '/**', // This allows any path under the hostname
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.cdninstagram.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.fbcdn.net',
+        port: '',
+        pathname: '/**',
       },
     ],
   },

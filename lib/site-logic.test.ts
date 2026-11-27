@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { siteConfig, buildRestaurantJsonLd } from '@/data/siteConfig';
 import { MENU_ITEMS, MENU_CATEGORIES, PIZZA_ITEMS } from '@/data/menu';
 import { CUSTOMER_REVIEWS } from '@/data/reviews';
+import { FALLBACK_INSTAGRAM_POSTS } from '@/data/instagram';
 import {
   getLiveOpenStatus,
   generateReservationTimeSlots,
@@ -42,10 +43,11 @@ test('menu keeps all 141 items and 20 pizzas with positive INR prices', () => {
   assert.equal(buffalo?.dietary, 'veg');
 });
 
-test('siteConfig, reviews, and menu contain no banned words or removed claims', () => {
+test('siteConfig, reviews, instagram, and menu contain no banned words or removed claims', () => {
   const textBlob = JSON.stringify({
     siteConfig,
     CUSTOMER_REVIEWS,
+    FALLBACK_INSTAGRAM_POSTS,
     MENU_CATEGORIES,
     MENU_ITEMS,
   }).toLowerCase();
@@ -70,6 +72,26 @@ test('customer reviews contain 4 Google reviews with valid ratings and photos', 
     assert.ok(review.author.trim().length > 0);
     assert.ok(review.quote.trim().length > 20);
     assert.ok(review.photoKey.length > 0);
+  }
+});
+
+test('instagram feed contains valid posts with existing local image files', () => {
+  assert.equal(FALLBACK_INSTAGRAM_POSTS.length, 6);
+  for (const post of FALLBACK_INSTAGRAM_POSTS) {
+    assert.ok(post.id.trim().length > 0);
+    assert.ok(post.caption.trim().length > 10);
+    assert.ok(post.mediaUrl.trim().length > 0);
+    assert.ok(post.permalink.startsWith('https://www.instagram.com'));
+    assert.ok(post.shortDate.trim().length > 0);
+
+    if (post.mediaUrl.startsWith('/')) {
+      const filePath = path.join(process.cwd(), 'public', post.mediaUrl);
+      assert.equal(
+        fs.existsSync(filePath),
+        true,
+        `Missing Instagram photo file on disk: ${filePath}`
+      );
+    }
   }
 });
 

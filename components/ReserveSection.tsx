@@ -1,13 +1,18 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import { ArrowUpRight, Phone } from 'lucide-react';
+import { ArrowUpRight, Phone, Users } from 'lucide-react';
 import { siteConfig } from '@/data/siteConfig';
 import {
+  buildWhatsAppGroupUrl,
   buildWhatsAppReserveUrl,
   generateReservationTimeSlots,
   getKolkataNowParts,
+  GROUP_OCCASIONS,
+  validateGroupBookingForm,
   validateReserveForm,
+  type GroupBookingErrors,
+  type GroupOccasion,
   type ReserveFormErrors,
 } from '@/lib/hours';
 import {
@@ -16,11 +21,17 @@ import {
 } from '@/components/MotionPrimitives';
 import TicketButton from '@/components/TicketButton';
 
+type BookingMode = 'table' | 'group';
+
 export default function ReserveSection() {
   const initialDate = useMemo(() => getKolkataNowParts(new Date()).dateStr, []);
+
+  const [mode, setMode] = useState<BookingMode>('table');
   const [name, setName] = useState('');
   const [date, setDate] = useState(initialDate);
   const [guests, setGuests] = useState('2');
+  const [occasion, setOccasion] = useState<GroupOccasion>('Birthday');
+  const [notes, setNotes] = useState('');
 
   const timeSlots = useMemo(() => generateReservationTimeSlots(date), [date]);
   const [selectedTime, setSelectedTime] = useState('');
@@ -28,8 +39,31 @@ export default function ReserveSection() {
     ? selectedTime
     : (timeSlots.find((slot) => slot === '7:30 PM') ?? timeSlots[0] ?? '');
 
-  const [errors, setErrors] = useState<ReserveFormErrors>({});
+  const [errors, setErrors] = useState<ReserveFormErrors | GroupBookingErrors>(
+    {}
+  );
   const [submittedUrl, setSubmittedUrl] = useState<string | null>(null);
+  const [submittedSummary, setSubmittedSummary] = useState<string | null>(null);
+
+  const switchMode = (nextMode: BookingMode) => {
+    setMode(nextMode);
+    setErrors({});
+    setSubmittedUrl(null);
+    setSubmittedSummary(null);
+    if (nextMode === 'group') {
+      const currentCount = Number.parseInt(guests, 10);
+      if (!Number.isFinite(currentCount) || currentCount < 6) {
+        setGuests('12');
+      }
+    } else {
+      const currentCount = Number.parseInt(guests, 10);
+      if (!Number.isFinite(currentCount) || currentCount > 30) {
+        setGuests('4');
+      } else if (currentCount === 12) {
+        setGuests('2');
+      }
+    }
+  };
 
   const handleDateChange = (nextDate: string) => {
     setDate(nextDate);
@@ -42,23 +76,51 @@ export default function ReserveSection() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const values = {
+
+    if (mode === 'table') {
+      const values = {
+        name,
+        date,
+        time: activeTime,
+        guests,
+      };
+      const nextErrors = validateReserveForm(values);
+      setErrors(nextErrors);
+
+      if (Object.keys(nextErrors).length > 0) {
+        setSubmittedUrl(null);
+        setSubmittedSummary(null);
+        return;
+      }
+
+      setSubmittedUrl(buildWhatsAppReserveUrl(values));
+      setSubmittedSummary(
+        `Table for ${guests} on ${date} at ${activeTime} under ${name.trim()}.`
+      );
+      return;
+    }
+
+    const groupValues = {
       name,
       date,
       time: activeTime,
       guests,
+      occasion,
+      notes,
     };
-
-    const nextErrors = validateReserveForm(values);
+    const nextErrors = validateGroupBookingForm(groupValues);
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
       setSubmittedUrl(null);
+      setSubmittedSummary(null);
       return;
     }
 
-    const whatsappUrl = buildWhatsAppReserveUrl(values);
-    setSubmittedUrl(whatsappUrl);
+    setSubmittedUrl(buildWhatsAppGroupUrl(groupValues));
+    setSubmittedSummary(
+      `${occasion} inquiry for ${guests} guests on ${date} at ${activeTime} hosted by ${name.trim()}.`
+    );
   };
 
   return (
@@ -72,27 +134,96 @@ export default function ReserveSection() {
           <div className="lg:col-span-5">
             <ScriptOverlapHeading
               id="reserve-heading"
-              script="Book your table"
-              title="RESERVE A TABLE"
+              script={mode === 'group' ? 'Celebrate together' : 'Book your table'}
+              title={mode === 'group' ? 'GROUP & PARTY' : 'RESERVE A TABLE'}
               align="left"
             />
-            <RevealBlock delay={0.08} className="mt-5">
+            <RevealBlock delay={0.06} className="mt-5 space-y-4">
               <p className="text-[16px] leading-relaxed text-[#46423D] max-w-[38ch]">
-                Send your request directly on WhatsApp, or call us to reserve a
-                table at our Model Town dining room.
+                {mode === 'group'
+                  ? 'Planning a birthday table, family dinner or friends reunion in Model Town? Send your headcount and menu notes directly on WhatsApp.'
+                  : 'Send your request directly on WhatsApp, or call us to reserve a table at our Model Town dining room.'}
               </p>
+
+              {/* Sharp architectural mode switcher */}
+              <div
+                role="tablist"
+                aria-label="Booking type"
+                className="inline-grid grid-cols-2 border border-[#0B0A09] divide-x divide-[#0B0A09] bg-[#FAF7F2]"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'table'}
+                  data-testid="booking-mode-table"
+                  onClick={() => switchMode('table')}
+                  className={`px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors duration-150 ${
+                    mode === 'table'
+                      ? 'bg-[#0B0A09] text-[#FFFFFF]'
+                      : 'bg-[#FAF7F2] text-[#0B0A09] hover:bg-[#FFFFFF]'
+                  }`}
+                >
+                  Table booking
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'group'}
+                  data-testid="booking-mode-group"
+                  onClick={() => switchMode('group')}
+                  className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors duration-150 ${
+                    mode === 'group'
+                      ? 'bg-[#0B0A09] text-[#FFFFFF]'
+                      : 'bg-[#FAF7F2] text-[#0B0A09] hover:bg-[#FFFFFF]'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>Group &amp; Party</span>
+                </button>
+              </div>
             </RevealBlock>
           </div>
 
-          <RevealBlock delay={0.08} className="lg:col-span-7">
+          <RevealBlock delay={0.06} className="lg:col-span-7">
             <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              {mode === 'group' && (
+                <div>
+                  <span className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-[#0B0A09] mb-2.5">
+                    Occasion
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {GROUP_OCCASIONS.map((item) => {
+                      const active = occasion === item;
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => {
+                            setOccasion(item);
+                            setSubmittedUrl(null);
+                          }}
+                          className={`rounded-none border px-3.5 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] transition-colors duration-150 ${
+                            active
+                              ? 'border-[#0B0A09] bg-[#F5C300] text-[#0B0A09]'
+                              : 'border-[#0B0A09]/40 bg-[#FAF7F2] text-[#0B0A09] hover:border-[#0B0A09] hover:bg-[#FFFFFF]'
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label
                     htmlFor="reserve-name"
                     className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-[#0B0A09] mb-2"
                   >
-                    Name
+                    {mode === 'group' ? 'Host Name' : 'Name'}
                   </label>
                   <input
                     id="reserve-name"
@@ -104,7 +235,9 @@ export default function ReserveSection() {
                       setName(e.target.value);
                       setSubmittedUrl(null);
                     }}
-                    placeholder="Your name"
+                    placeholder={
+                      mode === 'group' ? 'Organizer name' : 'Your name'
+                    }
                     aria-invalid={Boolean(errors.name)}
                     className="w-full rounded-none border border-[#0B0A09] bg-[#FAF7F2] px-4 py-3.5 text-[15px] text-[#0B0A09] placeholder:text-[#6B655D] transition-colors focus:bg-[#FFFFFF] focus:outline-none focus:ring-2 focus:ring-[#D99B00]"
                   />
@@ -123,14 +256,14 @@ export default function ReserveSection() {
                     htmlFor="reserve-guests"
                     className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-[#0B0A09] mb-2"
                   >
-                    Guests
+                    {mode === 'group' ? 'Party Size (6–60)' : 'Guests'}
                   </label>
                   <input
                     id="reserve-guests"
                     name="guests"
                     type="number"
-                    min={1}
-                    max={30}
+                    min={mode === 'group' ? 6 : 1}
+                    max={mode === 'group' ? 60 : 30}
                     required
                     value={guests}
                     onChange={(e) => {
@@ -213,9 +346,34 @@ export default function ReserveSection() {
                 </div>
               </div>
 
+              {mode === 'group' && (
+                <div>
+                  <label
+                    htmlFor="reserve-notes"
+                    className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-[#0B0A09] mb-2"
+                  >
+                    Menu &amp; Seating Notes (Optional)
+                  </label>
+                  <textarea
+                    id="reserve-notes"
+                    name="notes"
+                    rows={3}
+                    value={notes}
+                    onChange={(e) => {
+                      setNotes(e.target.value);
+                      setSubmittedUrl(null);
+                    }}
+                    placeholder="e.g. Veg-only spread, pre-ordered Half & Half pizzas, cake table..."
+                    className="w-full rounded-none border border-[#0B0A09] bg-[#FAF7F2] px-4 py-3 text-[15px] text-[#0B0A09] placeholder:text-[#6B655D] transition-colors focus:bg-[#FFFFFF] focus:outline-none focus:ring-2 focus:ring-[#D99B00]"
+                  />
+                </div>
+              )}
+
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 <TicketButton type="submit" variant="ink">
-                  Reserve on WhatsApp
+                  {mode === 'group'
+                    ? 'Send party inquiry on WhatsApp'
+                    : 'Reserve on WhatsApp'}
                 </TicketButton>
 
                 <a
@@ -227,14 +385,13 @@ export default function ReserveSection() {
                 </a>
               </div>
 
-              {submittedUrl && (
+              {submittedUrl && submittedSummary && (
                 <div
                   data-testid="whatsapp-reserve-ready"
                   className="border border-[#0B0A09] bg-[#FAF7F2] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
                   <p className="text-[15px] font-medium text-[#0B0A09] tabular-nums">
-                    Table for {guests} on {date} at {activeTime} under{' '}
-                    {name.trim()}.
+                    {submittedSummary}
                   </p>
                   <a
                     href={submittedUrl}

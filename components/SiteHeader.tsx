@@ -44,10 +44,23 @@ export default function SiteHeader({
 
   useEffect(() => {
     if (solidDefault) return;
-    const update = () => setScrolled(window.scrollY > 24);
+    let rafId = 0;
+    const update = () => {
+      rafId = 0;
+      const next = window.scrollY > 24;
+      setScrolled((prev) => (prev === next ? prev : next));
+    };
+    const onScroll = () => {
+      if (rafId === 0) {
+        rafId = window.requestAnimationFrame(update);
+      }
+    };
     update();
-    window.addEventListener('scroll', update, { passive: true });
-    return () => window.removeEventListener('scroll', update);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId !== 0) window.cancelAnimationFrame(rafId);
+    };
   }, [solidDefault]);
 
   const isCompact = solidDefault || scrolled;
@@ -64,7 +77,7 @@ export default function SiteHeader({
     <header
       data-testid="site-header"
       data-scrolled={isCompact ? 'true' : 'false'}
-      className={`fixed top-0 inset-x-0 z-50 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+      className={`fixed top-0 inset-x-0 z-50 print:hidden transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         isCompact ? 'px-3 pt-2.5 lg:px-6 lg:pt-3' : 'px-3 pt-3.5 lg:px-6 lg:pt-4'
       }`}
     >
