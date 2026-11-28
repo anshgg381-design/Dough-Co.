@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react';
 import { ArrowUpRight, Phone, Users } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { siteConfig } from '@/data/siteConfig';
 import {
   buildWhatsAppGroupUrl,
@@ -16,6 +17,7 @@ import {
   type ReserveFormErrors,
 } from '@/lib/hours';
 import {
+  EDITORIAL_EASE,
   RevealBlock,
   ScriptOverlapHeading,
 } from '@/components/MotionPrimitives';
@@ -25,6 +27,7 @@ type BookingMode = 'table' | 'group';
 
 export default function ReserveSection() {
   const initialDate = useMemo(() => getKolkataNowParts(new Date()).dateStr, []);
+  const prefersReduced = useReducedMotion();
 
   const [mode, setMode] = useState<BookingMode>('table');
   const [name, setName] = useState('');
@@ -145,11 +148,11 @@ export default function ReserveSection() {
                   : 'Send your request directly on WhatsApp, or call us to reserve a table at our Model Town dining room.'}
               </p>
 
-              {/* Sharp architectural mode switcher */}
+              {/* Sharp architectural mode switcher with sliding ink fill */}
               <div
                 role="tablist"
                 aria-label="Booking type"
-                className="inline-grid grid-cols-2 border border-[#0B0A09] divide-x divide-[#0B0A09] bg-[#FAF7F2]"
+                className="relative inline-grid grid-cols-2 border border-[#0B0A09] divide-x divide-[#0B0A09] bg-[#FAF7F2]"
               >
                 <button
                   type="button"
@@ -157,13 +160,23 @@ export default function ReserveSection() {
                   aria-selected={mode === 'table'}
                   data-testid="booking-mode-table"
                   onClick={() => switchMode('table')}
-                  className={`px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors duration-150 ${
+                  className={`relative px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors duration-200 ${
                     mode === 'table'
-                      ? 'bg-[#0B0A09] text-[#FFFFFF]'
-                      : 'bg-[#FAF7F2] text-[#0B0A09] hover:bg-[#FFFFFF]'
+                      ? 'text-[#FFFFFF]'
+                      : 'text-[#0B0A09] hover:bg-[#FFFFFF]'
                   }`}
                 >
-                  Table booking
+                  {mode === 'table' && (
+                    <motion.span
+                      layoutId="booking-mode-bg"
+                      transition={{
+                        duration: prefersReduced ? 0 : 0.24,
+                        ease: EDITORIAL_EASE,
+                      }}
+                      className="absolute inset-0 bg-[#0B0A09]"
+                    />
+                  )}
+                  <span className="relative z-10">Table booking</span>
                 </button>
                 <button
                   type="button"
@@ -171,14 +184,26 @@ export default function ReserveSection() {
                   aria-selected={mode === 'group'}
                   data-testid="booking-mode-group"
                   onClick={() => switchMode('group')}
-                  className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors duration-150 ${
+                  className={`relative inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors duration-200 ${
                     mode === 'group'
-                      ? 'bg-[#0B0A09] text-[#FFFFFF]'
-                      : 'bg-[#FAF7F2] text-[#0B0A09] hover:bg-[#FFFFFF]'
+                      ? 'text-[#FFFFFF]'
+                      : 'text-[#0B0A09] hover:bg-[#FFFFFF]'
                   }`}
                 >
-                  <Users className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                  <span>Group &amp; Party</span>
+                  {mode === 'group' && (
+                    <motion.span
+                      layoutId="booking-mode-bg"
+                      transition={{
+                        duration: prefersReduced ? 0 : 0.24,
+                        ease: EDITORIAL_EASE,
+                      }}
+                      className="absolute inset-0 bg-[#0B0A09]"
+                    />
+                  )}
+                  <span className="relative z-10 inline-flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    <span>Group &amp; Party</span>
+                  </span>
                 </button>
               </div>
             </RevealBlock>
@@ -186,36 +211,45 @@ export default function ReserveSection() {
 
           <RevealBlock delay={0.06} className="lg:col-span-7">
             <form onSubmit={handleSubmit} noValidate className="space-y-6">
-              {mode === 'group' && (
-                <div>
-                  <span className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-[#0B0A09] mb-2.5">
-                    Occasion
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {GROUP_OCCASIONS.map((item) => {
-                      const active = occasion === item;
-                      return (
-                        <button
-                          key={item}
-                          type="button"
-                          aria-pressed={active}
-                          onClick={() => {
-                            setOccasion(item);
-                            setSubmittedUrl(null);
-                          }}
-                          className={`rounded-none border px-3.5 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] transition-colors duration-150 ${
-                            active
-                              ? 'border-[#0B0A09] bg-[#F5C300] text-[#0B0A09]'
-                              : 'border-[#0B0A09]/40 bg-[#FAF7F2] text-[#0B0A09] hover:border-[#0B0A09] hover:bg-[#FFFFFF]'
-                          }`}
-                        >
-                          {item}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {mode === 'group' && (
+                  <motion.div
+                    key="group-occasions"
+                    initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+                    transition={{ duration: 0.28, ease: EDITORIAL_EASE }}
+                  >
+                    <span className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-[#0B0A09] mb-2.5">
+                      Occasion
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {GROUP_OCCASIONS.map((item) => {
+                        const active = occasion === item;
+                        return (
+                          <motion.button
+                            key={item}
+                            type="button"
+                            aria-pressed={active}
+                            whileTap={prefersReduced ? undefined : { scale: 0.96 }}
+                            onClick={() => {
+                              setOccasion(item);
+                              setSubmittedUrl(null);
+                            }}
+                            className={`rounded-none border px-3.5 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] transition-colors duration-150 ${
+                              active
+                                ? 'border-[#0B0A09] bg-[#F5C300] text-[#0B0A09]'
+                                : 'border-[#0B0A09]/40 bg-[#FAF7F2] text-[#0B0A09] hover:border-[#0B0A09] hover:bg-[#FFFFFF]'
+                            }`}
+                          >
+                            {item}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
@@ -346,28 +380,36 @@ export default function ReserveSection() {
                 </div>
               </div>
 
-              {mode === 'group' && (
-                <div>
-                  <label
-                    htmlFor="reserve-notes"
-                    className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-[#0B0A09] mb-2"
+              <AnimatePresence initial={false}>
+                {mode === 'group' && (
+                  <motion.div
+                    key="group-notes"
+                    initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+                    transition={{ duration: 0.28, ease: EDITORIAL_EASE }}
                   >
-                    Menu &amp; Seating Notes (Optional)
-                  </label>
-                  <textarea
-                    id="reserve-notes"
-                    name="notes"
-                    rows={3}
-                    value={notes}
-                    onChange={(e) => {
-                      setNotes(e.target.value);
-                      setSubmittedUrl(null);
-                    }}
-                    placeholder="e.g. Veg-only spread, pre-ordered Half & Half pizzas, cake table..."
-                    className="w-full rounded-none border border-[#0B0A09] bg-[#FAF7F2] px-4 py-3 text-[15px] text-[#0B0A09] placeholder:text-[#6B655D] transition-colors focus:bg-[#FFFFFF] focus:outline-none focus:ring-2 focus:ring-[#D99B00]"
-                  />
-                </div>
-              )}
+                    <label
+                      htmlFor="reserve-notes"
+                      className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-[#0B0A09] mb-2"
+                    >
+                      Menu &amp; Seating Notes (Optional)
+                    </label>
+                    <textarea
+                      id="reserve-notes"
+                      name="notes"
+                      rows={3}
+                      value={notes}
+                      onChange={(e) => {
+                        setNotes(e.target.value);
+                        setSubmittedUrl(null);
+                      }}
+                      placeholder="e.g. Veg-only spread, pre-ordered Half & Half pizzas, cake table..."
+                      className="w-full rounded-none border border-[#0B0A09] bg-[#FAF7F2] px-4 py-3 text-[15px] text-[#0B0A09] placeholder:text-[#6B655D] transition-colors focus:bg-[#FFFFFF] focus:outline-none focus:ring-2 focus:ring-[#D99B00]"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 <TicketButton type="submit" variant="ink">
@@ -385,25 +427,32 @@ export default function ReserveSection() {
                 </a>
               </div>
 
-              {submittedUrl && submittedSummary && (
-                <div
-                  data-testid="whatsapp-reserve-ready"
-                  className="border border-[#0B0A09] bg-[#FAF7F2] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                >
-                  <p className="text-[15px] font-medium text-[#0B0A09] tabular-nums">
-                    {submittedSummary}
-                  </p>
-                  <a
-                    href={submittedUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group inline-flex items-center gap-1.5 text-[14px] font-semibold uppercase tracking-[0.06em] text-[#0B0A09] underline underline-offset-4 hover:text-[#8C6200] shrink-0"
+              <AnimatePresence>
+                {submittedUrl && submittedSummary && (
+                  <motion.div
+                    key="whatsapp-ready"
+                    data-testid="whatsapp-reserve-ready"
+                    initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 12, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                    transition={{ duration: 0.32, ease: EDITORIAL_EASE }}
+                    className="border border-[#0B0A09] bg-[#FAF7F2] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
-                    <span>Open WhatsApp message</span>
-                    <ArrowUpRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
-                  </a>
-                </div>
-              )}
+                    <p className="text-[15px] font-medium text-[#0B0A09] tabular-nums">
+                      {submittedSummary}
+                    </p>
+                    <a
+                      href={submittedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group inline-flex items-center gap-1.5 text-[14px] font-semibold uppercase tracking-[0.06em] text-[#0B0A09] underline underline-offset-4 hover:text-[#8C6200] shrink-0"
+                    >
+                      <span>Open WhatsApp message</span>
+                      <ArrowUpRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
+                    </a>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </form>
           </RevealBlock>
         </div>

@@ -7,8 +7,8 @@ import {
   motion,
   useReducedMotion,
   useScroll,
-  useSpring,
   useTransform,
+  type Variants,
 } from 'motion/react';
 import { siteConfig } from '@/data/siteConfig';
 import { siteImages } from '@/data/images';
@@ -16,40 +16,73 @@ import { getLiveOpenStatus, type LiveOpenStatus } from '@/lib/hours';
 import { EDITORIAL_EASE } from '@/components/MotionPrimitives';
 import TicketButton from '@/components/TicketButton';
 
+const HERO_STAGGER_CONTAINER: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.09,
+      delayChildren: 0.04,
+    },
+  },
+};
+
+const HERO_STAGGER_ITEM: Variants = {
+  hidden: { opacity: 0, y: 18 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.62, ease: EDITORIAL_EASE },
+  },
+};
+
 export default function HeroSection() {
   const heroStageRef = useRef<HTMLElement>(null);
   const prefersReduced = useReducedMotion();
   const [status, setStatus] = useState<LiveOpenStatus | null>(null);
 
-  // Smooth GPU-composited sticky scroll choreography (opacity + translateY only, zero CSS blur rasterization)
+  // Direct 1:1 scroll listeners (zero useSpring lag loops fighting native scroll inertia)
   const { scrollYProgress } = useScroll({
     target: heroStageRef,
     offset: ['start start', 'end end'],
   });
-  const smooth = useSpring(scrollYProgress, { stiffness: 185, damping: 32 });
+
+  const { scrollYProgress: parallaxProgress } = useScroll({
+    target: heroStageRef,
+    offset: ['start start', 'end start'],
+  });
 
   // Whole 5-line stack glides smoothly upward into full frame
-  const stackY = useTransform(smooth, [0, 0.9], [72, 0]);
+  const stackY = useTransform(scrollYProgress, [0, 0.9], [72, 0]);
 
   // Line 2: "PIZZA, PASTA" — softens in, sharpens first
-  const line2Opacity = useTransform(smooth, [0, 0.24], [0.46, 1]);
-  const line2Y = useTransform(smooth, [0, 0.24], [10, 0]);
+  const line2Opacity = useTransform(scrollYProgress, [0, 0.24], [0.46, 1]);
+  const line2Y = useTransform(scrollYProgress, [0, 0.24], [10, 0]);
 
   // Line 3: "TACOS" — reveals on scroll
-  const line3Opacity = useTransform(smooth, [0.16, 0.42], [0, 1]);
-  const line3Y = useTransform(smooth, [0.16, 0.44], [18, 0]);
+  const line3Opacity = useTransform(scrollYProgress, [0.16, 0.42], [0, 1]);
+  const line3Y = useTransform(scrollYProgress, [0.16, 0.44], [18, 0]);
 
   // Line 4: "COFFEE, SHAKES, MOCKTAILS" — reveals on scroll
-  const line4Opacity = useTransform(smooth, [0.4, 0.66], [0, 1]);
-  const line4Y = useTransform(smooth, [0.4, 0.68], [18, 0]);
+  const line4Opacity = useTransform(scrollYProgress, [0.4, 0.66], [0, 1]);
+  const line4Y = useTransform(scrollYProgress, [0.4, 0.68], [18, 0]);
 
   // Line 5: "& MUCH MORE." — final reveal
-  const line5Opacity = useTransform(smooth, [0.62, 0.88], [0, 1]);
-  const line5Y = useTransform(smooth, [0.62, 0.9], [18, 0]);
+  const line5Opacity = useTransform(scrollYProgress, [0.62, 0.88], [0, 1]);
+  const line5Y = useTransform(scrollYProgress, [0.62, 0.9], [18, 0]);
 
-  // Foreground portrait photo gently settles on scroll
-  const photoY = useTransform(smooth, [0, 1], [0, 12]);
-  const photoScale = useTransform(smooth, [0, 1], [1, 1.035]);
+  // Multi-plane scroll-triggered parallax on the circular storefront medallion
+  const medallionY = useTransform(parallaxProgress, [0, 1], [0, -44]);
+  const medallionScale = useTransform(parallaxProgress, [0, 0.65, 1], [1, 1.055, 1.02]);
+  const medallionRotate = useTransform(parallaxProgress, [0, 1], [0, 2.2]);
+
+  // Counter-moving inner storefront photo inside the circular aperture for true optical depth
+  const innerPhotoY = useTransform(parallaxProgress, [0, 1], [6, -24]);
+  const innerPhotoScale = useTransform(parallaxProgress, [0, 1], [1.06, 1.15]);
+
+  // Subtle counter-rotating hairline orbital ring & plinth depth shift
+  const orbitalRingRotate = useTransform(parallaxProgress, [0, 1], [0, 52]);
+  const orbitalRingScale = useTransform(parallaxProgress, [0, 1], [1, 1.05]);
+  const plinthY = useTransform(parallaxProgress, [0, 1], [0, 22]);
 
   useEffect(() => {
     const syncStatus = () => setStatus(getLiveOpenStatus(new Date()));
@@ -66,27 +99,34 @@ export default function HeroSection() {
     >
       {/* Desktop sticky architectural plaster stage + balanced single-screen mobile hero */}
       <div className="relative lg:sticky lg:top-0 min-h-[100svh] lg:h-[100svh] flex flex-col justify-between overflow-hidden pt-[84px] lg:pt-[94px]">
-        {/* Warm stone counter plinth band at the lower edge */}
-        <div
+        {/* Warm stone counter plinth band at the lower edge with subtle depth parallax */}
+        <motion.div
           aria-hidden="true"
+          style={prefersReduced ? undefined : { y: plinthY }}
           className="pointer-events-none hidden lg:block absolute inset-x-0 bottom-0 h-[23vh] bg-[#EAE4DA] border-t border-[#0B0A09]/12"
         />
 
-        {/* Layered editorial composition: centered 5-line scroll reveal above architectural hero portrait */}
-        <div className="relative flex-1 flex flex-col items-center justify-center lg:justify-between px-5 lg:px-8 pb-[84px] md:pb-12 lg:pb-6">
+        {/* Layered editorial composition: staggered initial reveal + circular hero medallion */}
+        <motion.div
+          variants={prefersReduced ? undefined : HERO_STAGGER_CONTAINER}
+          initial={prefersReduced ? undefined : 'hidden'}
+          animate={prefersReduced ? undefined : 'visible'}
+          className="relative flex-1 flex flex-col items-center justify-center lg:justify-between px-5 lg:px-8 pb-[84px] md:pb-12 lg:pb-6"
+        >
           {/* Desktop 5-line progressive GPU scroll-reveal headline */}
           <motion.div
+            variants={prefersReduced ? undefined : HERO_STAGGER_ITEM}
             style={prefersReduced ? undefined : { y: stackY }}
-            className="hidden lg:flex relative z-10 text-center flex-col items-center pt-2 xl:pt-4 will-change-transform"
+            className="hidden lg:flex relative z-10 text-center flex-col items-center pt-2 xl:pt-4"
           >
             <motion.p
               initial={
                 prefersReduced
                   ? { opacity: 1 }
-                  : { opacity: 0, y: 10, rotate: -3 }
+                  : { opacity: 0, y: 12, rotate: -3.5 }
               }
               animate={{ opacity: 1, y: 0, rotate: -1.5 }}
-              transition={{ duration: 0.55, ease: EDITORIAL_EASE }}
+              transition={{ duration: 0.56, ease: EDITORIAL_EASE }}
               className="font-script font-semibold text-[34px] xl:text-[38px] leading-none text-[#D99B00] mb-1.5 select-none"
             >
               Model Town, Panipat
@@ -94,9 +134,9 @@ export default function HeroSection() {
 
             <h1 className="font-display font-bold uppercase tracking-[-0.02em] leading-[0.95] text-[#0B0A09] select-none flex flex-col items-center gap-0.5">
               <motion.span
-                initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 14 }}
+                initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.04, ease: EDITORIAL_EASE }}
+                transition={{ duration: 0.58, delay: 0.05, ease: EDITORIAL_EASE }}
                 className="block text-[clamp(2.65rem,4.6vw,4.35rem)]"
               >
                 ALL UNDER ONE ROOF.
@@ -108,7 +148,7 @@ export default function HeroSection() {
                     ? undefined
                     : { y: line2Y, opacity: line2Opacity }
                 }
-                className="block text-[clamp(2.35rem,4vw,3.75rem)] text-[#0B0A09] will-change-transform"
+                className="block text-[clamp(2.35rem,4vw,3.75rem)] text-[#0B0A09]"
               >
                 PIZZA, PASTA
               </motion.span>
@@ -119,7 +159,7 @@ export default function HeroSection() {
                     ? undefined
                     : { y: line3Y, opacity: line3Opacity }
                 }
-                className="block text-[clamp(2.35rem,4vw,3.75rem)] text-[#0B0A09] will-change-transform"
+                className="block text-[clamp(2.35rem,4vw,3.75rem)] text-[#0B0A09]"
               >
                 TACOS
               </motion.span>
@@ -130,7 +170,7 @@ export default function HeroSection() {
                     ? undefined
                     : { y: line4Y, opacity: line4Opacity }
                 }
-                className="block text-[clamp(1.95rem,3.3vw,3.15rem)] text-[#0B0A09] will-change-transform"
+                className="block text-[clamp(1.95rem,3.3vw,3.15rem)] text-[#0B0A09]"
               >
                 COFFEE, SHAKES, MOCKTAILS
               </motion.span>
@@ -141,7 +181,7 @@ export default function HeroSection() {
                     ? undefined
                     : { y: line5Y, opacity: line5Opacity }
                 }
-                className="block text-[clamp(1.75rem,2.9vw,2.75rem)] text-[#8C6200] will-change-transform"
+                className="block text-[clamp(1.75rem,2.9vw,2.75rem)] text-[#8C6200]"
               >
                 &amp; MUCH MORE.
               </motion.span>
@@ -149,7 +189,10 @@ export default function HeroSection() {
           </motion.div>
 
           {/* Mobile crisp staggered 5-line entrance headline */}
-          <div className="flex lg:hidden relative z-10 text-center flex-col items-center">
+          <motion.div
+            variants={prefersReduced ? undefined : HERO_STAGGER_ITEM}
+            className="flex lg:hidden relative z-10 text-center flex-col items-center"
+          >
             <motion.p
               initial={
                 prefersReduced
@@ -157,7 +200,7 @@ export default function HeroSection() {
                   : { opacity: 0, y: 10, rotate: -3 }
               }
               animate={{ opacity: 1, y: 0, rotate: -1.5 }}
-              transition={{ duration: 0.55, ease: EDITORIAL_EASE }}
+              transition={{ duration: 0.52, ease: EDITORIAL_EASE }}
               className="font-script font-semibold text-[26px] leading-none text-[#D99B00] mb-1.5 select-none"
             >
               Model Town, Panipat
@@ -167,7 +210,7 @@ export default function HeroSection() {
               <motion.span
                 initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.04, ease: EDITORIAL_EASE }}
+                transition={{ duration: 0.5, delay: 0.04, ease: EDITORIAL_EASE }}
                 className="block text-[clamp(2.2rem,9vw,3.1rem)]"
               >
                 ALL UNDER ONE ROOF.
@@ -175,7 +218,7 @@ export default function HeroSection() {
               <motion.span
                 initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.1, ease: EDITORIAL_EASE }}
+                transition={{ duration: 0.5, delay: 0.09, ease: EDITORIAL_EASE }}
                 className="block text-[clamp(1.65rem,6.6vw,2.35rem)] text-[#0B0A09]/92"
               >
                 PIZZA, PASTA
@@ -183,7 +226,7 @@ export default function HeroSection() {
               <motion.span
                 initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.16, ease: EDITORIAL_EASE }}
+                transition={{ duration: 0.5, delay: 0.14, ease: EDITORIAL_EASE }}
                 className="block text-[clamp(1.65rem,6.6vw,2.35rem)] text-[#0B0A09]/92"
               >
                 TACOS
@@ -191,7 +234,7 @@ export default function HeroSection() {
               <motion.span
                 initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.22, ease: EDITORIAL_EASE }}
+                transition={{ duration: 0.5, delay: 0.19, ease: EDITORIAL_EASE }}
                 className="block text-[clamp(1.4rem,5.5vw,2rem)] text-[#0B0A09]/92"
               >
                 COFFEE, SHAKES, MOCKTAILS
@@ -199,45 +242,67 @@ export default function HeroSection() {
               <motion.span
                 initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.28, ease: EDITORIAL_EASE }}
+                transition={{ duration: 0.5, delay: 0.24, ease: EDITORIAL_EASE }}
                 className="block text-[clamp(1.3rem,5vw,1.8rem)] text-[#8C6200]"
               >
                 &amp; MUCH MORE.
               </motion.span>
             </h1>
-          </div>
+          </motion.div>
 
-          {/* Architectural circular medallion showcasing Dough & Co. storefront facade */}
+          {/* Architectural circular medallion with multi-plane scroll-triggered parallax */}
           <motion.div
-            style={prefersReduced ? undefined : { y: photoY }}
-            initial={
+            data-testid="hero-round-parallax"
+            variants={prefersReduced ? undefined : HERO_STAGGER_ITEM}
+            style={
               prefersReduced
-                ? { opacity: 1 }
-                : { opacity: 0, y: 24, scale: 0.97 }
+                ? undefined
+                : { y: medallionY, scale: medallionScale, rotate: medallionRotate }
             }
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.72, delay: 0.1, ease: EDITORIAL_EASE }}
-            className="relative z-20 mt-4 sm:mt-5 lg:mt-0 will-change-transform"
+            className="relative z-20 mt-6 sm:mt-6 lg:mt-0 lg:mb-3 will-change-transform"
           >
+            {/* Subtle scroll-rotating outer hairline orbital ring */}
+            <motion.div
+              aria-hidden="true"
+              style={
+                prefersReduced
+                  ? undefined
+                  : { rotate: orbitalRingRotate, scale: orbitalRingScale }
+              }
+              className="pointer-events-none absolute -inset-3 sm:-inset-3.5 rounded-full border border-dashed border-[#0B0A09]/25"
+            >
+              <span className="absolute -top-[3px] left-1/2 -translate-x-1/2 h-[6px] w-[6px] rounded-full bg-[#D99B00]" />
+              <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[6px] w-[6px] rounded-full bg-[#0B0A09]" />
+            </motion.div>
+
             <motion.div
               data-cursor="view"
-              whileHover={prefersReduced ? undefined : { scale: 1.025 }}
-              transition={{ duration: 0.45, ease: EDITORIAL_EASE }}
-              className="relative w-[210px] sm:w-[250px] lg:w-[310px] xl:w-[350px] aspect-square overflow-hidden rounded-full border-2 border-[#0B0A09] bg-[#161412] shadow-[0_24px_50px_rgba(11,10,9,0.22)] ring-4 ring-[#F5F2EB]/80"
+              whileHover={prefersReduced ? undefined : { scale: 1.03 }}
+              transition={{ duration: 0.4, ease: EDITORIAL_EASE }}
+              className="relative w-[210px] sm:w-[250px] lg:w-[300px] xl:w-[340px] aspect-square overflow-hidden rounded-full border-2 border-[#0B0A09] bg-[#161412] shadow-[0_24px_50px_rgba(11,10,9,0.22)] ring-4 ring-[#F5F2EB]/85"
             >
+              {/* Counter-moving inner storefront layer creates subtle lens depth on scroll */}
               <motion.div
-                style={prefersReduced ? undefined : { scale: photoScale }}
-                className="relative w-full h-full rounded-full overflow-hidden will-change-transform"
+                style={
+                  prefersReduced
+                    ? undefined
+                    : { y: innerPhotoY, scale: innerPhotoScale }
+                }
+                className="relative w-full h-full will-change-transform"
               >
                 <Image
                   src={siteImages.heroStorefront}
                   alt="Dough & Co. Pizzeria and Taqueria storefront in Model Town, Panipat"
                   fill
                   priority
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
+                  quality={85}
                   placeholder="blur"
-                  sizes="(max-width: 640px) 220px, (max-width: 1024px) 280px, 360px"
+                  sizes="(max-width: 640px) 240px, (max-width: 1024px) 300px, 384px"
                   referrerPolicy="no-referrer"
-                  className="object-cover object-center"
+                  className="object-cover object-[center_36%]"
                 />
               </motion.div>
             </motion.div>
@@ -245,10 +310,8 @@ export default function HeroSection() {
 
           {/* Mobile CTAs & live location status with comfortable clearance above mobile bar */}
           <motion.div
-            initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.18, ease: EDITORIAL_EASE }}
-            className="lg:hidden relative z-30 mt-4 flex flex-col items-center text-center"
+            variants={prefersReduced ? undefined : HERO_STAGGER_ITEM}
+            className="lg:hidden relative z-30 mt-5 flex flex-col items-center text-center"
           >
             <div className="flex flex-wrap items-center justify-center gap-2.5">
               <TicketButton
@@ -277,13 +340,13 @@ export default function HeroSection() {
               {status ? status.label : 'Open daily from 12:00 PM'}
             </p>
           </motion.div>
-        </div>
+        </motion.div>
 
         {/* Desktop corner anchors on the stone plinth: CTAs + live status left, SCROLL cue right */}
         <motion.div
-          initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 12 }}
+          initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.18, ease: EDITORIAL_EASE }}
+          transition={{ duration: 0.58, delay: 0.24, ease: EDITORIAL_EASE }}
           className="hidden lg:flex pointer-events-none absolute inset-x-0 bottom-0 z-30 mx-auto max-w-[1392px] w-full px-6 pb-8 items-end justify-between"
         >
           <div className="pointer-events-auto flex flex-col items-start gap-3 max-w-[380px]">
@@ -306,7 +369,7 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Signature lepainquotidien.com bottom-right SCROLL cue */}
+          {/* Signature lepainquotidien.com bottom-right SCROLL cue using zero-JS CSS keyframe */}
           <a
             href="#menu-highlights"
             aria-label="Scroll to explore menu highlights"
@@ -314,7 +377,7 @@ export default function HeroSection() {
           >
             <span>SCROLL</span>
             <span className="inline-flex items-center justify-center w-11 h-11 rounded-full border border-[#0B0A09] bg-[#FFFFFF] text-[#0B0A09] transition-colors duration-300 group-hover:bg-[#0B0A09] group-hover:text-[#FFFFFF]">
-              <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:translate-y-[2px]" />
+              <ChevronDown className="w-4 h-4 motion-safe:animate-[dough-float_2.2s_ease-in-out_infinite]" />
             </span>
           </a>
         </motion.div>

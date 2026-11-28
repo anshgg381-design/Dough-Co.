@@ -74,9 +74,12 @@ export default function SiteHeader({
   };
 
   return (
-    <header
+    <motion.header
       data-testid="site-header"
       data-scrolled={isCompact ? 'true' : 'false'}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: -14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: EDITORIAL_EASE }}
       className={`fixed top-0 inset-x-0 z-50 print:hidden transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         isCompact ? 'px-3 pt-2.5 lg:px-6 lg:pt-3' : 'px-3 pt-3.5 lg:px-6 lg:pt-4'
       }`}
@@ -97,7 +100,16 @@ export default function SiteHeader({
             {LEFT_LINKS.map((item) => {
               const href = resolveHref(item.href);
               const cellClass =
-                'flex items-center justify-center px-4 text-[14px] font-medium tracking-[0.02em] text-[#0B0A09] whitespace-nowrap transition-colors duration-200 hover:bg-[#FAF7F2] hover:text-[#8C6200]';
+                'group/nav relative flex items-center justify-center px-4 text-[14px] font-medium tracking-[0.02em] text-[#0B0A09] whitespace-nowrap transition-colors duration-200 hover:bg-[#FAF7F2] hover:text-[#8C6200]';
+              const innerLabel = (
+                <span className="relative py-0.5">
+                  <span>{item.label}</span>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-[1.5px] origin-left scale-x-0 bg-[#D99B00] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/nav:scale-x-100"
+                  />
+                </span>
+              );
               return item.href.startsWith('/') ? (
                 <Link
                   key={item.href}
@@ -105,7 +117,7 @@ export default function SiteHeader({
                   onClick={() => handleLinkClick(item.href)}
                   className={cellClass}
                 >
-                  {item.label}
+                  {innerLabel}
                 </Link>
               ) : (
                 <a
@@ -114,7 +126,7 @@ export default function SiteHeader({
                   onClick={() => handleLinkClick(item.href)}
                   className={cellClass}
                 >
-                  {item.label}
+                  {innerLabel}
                 </a>
               );
             })}
@@ -126,7 +138,10 @@ export default function SiteHeader({
             aria-label={`${siteConfig.name} home`}
             className="flex items-center justify-center px-10 xl:px-16 transition-colors duration-200 hover:bg-[#FAF7F2]"
           >
-            <span
+            <motion.span
+              whileHover={prefersReduced ? undefined : { scale: 1.08, rotate: -4 }}
+              whileTap={prefersReduced ? undefined : { scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 22 }}
               className={`relative block rounded-full overflow-hidden border border-[#0B0A09]/25 bg-[#FFFFFF] transition-[width,height] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 isCompact ? 'w-[42px] h-[42px]' : 'w-[50px] h-[50px]'
               }`}
@@ -135,13 +150,15 @@ export default function SiteHeader({
                 src={siteImages.logoBadge}
                 alt={siteConfig.name}
                 fill
+                priority
                 sizes="56px"
                 loading="eager"
+                decoding="async"
                 placeholder="blur"
                 referrerPolicy="no-referrer"
                 className="object-cover"
               />
-            </span>
+            </motion.span>
           </Link>
 
           {/* Right cells: Reserve, Visit, and Order on Zomato primary action */}
@@ -151,9 +168,15 @@ export default function SiteHeader({
                 key={item.href}
                 href={resolveHref(item.href)}
                 onClick={() => handleLinkClick(item.href)}
-                className="flex items-center justify-center px-4 text-[14px] font-medium tracking-[0.02em] text-[#0B0A09] whitespace-nowrap transition-colors duration-200 hover:bg-[#FAF7F2] hover:text-[#8C6200]"
+                className="group/nav relative flex items-center justify-center px-4 text-[14px] font-medium tracking-[0.02em] text-[#0B0A09] whitespace-nowrap transition-colors duration-200 hover:bg-[#FAF7F2] hover:text-[#8C6200]"
               >
-                {item.label}
+                <span className="relative py-0.5">
+                  <span>{item.label}</span>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-[1.5px] origin-left scale-x-0 bg-[#D99B00] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/nav:scale-x-100"
+                  />
+                </span>
               </a>
             ))}
 
@@ -199,8 +222,10 @@ export default function SiteHeader({
                 src={siteImages.logoBadge}
                 alt={siteConfig.name}
                 fill
+                priority
                 sizes="44px"
                 loading="eager"
+                decoding="async"
                 placeholder="blur"
                 referrerPolicy="no-referrer"
                 className="object-cover"
@@ -279,6 +304,6 @@ export default function SiteHeader({
           )}
         </AnimatePresence>
       </div>
-    </header>
+    </motion.header>
   );
 }

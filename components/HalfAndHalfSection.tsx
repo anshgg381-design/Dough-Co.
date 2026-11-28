@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { siteImages } from '@/data/images';
 import { siteConfig } from '@/data/siteConfig';
 import {
+  ArchitecturalRule,
   ParallaxFrame,
   RevealBlock,
   ScriptOverlapHeading,
@@ -21,13 +22,16 @@ export default function HalfAndHalfSection() {
       <div className="absolute inset-0">
         <ParallaxFrame
           className="w-full h-full"
-          scaleRange={[1.12, 1.02]}
-          yRange={[-24, 24]}
+          scaleRange={[1.18, 1.06]}
+          yRange={[-34, 34]}
         >
           <Image
             src={siteImages.heroPizza}
             alt="Wood-fired Napoli pizza at Dough & Co. available as Half & Half"
             fill
+            loading="eager"
+            decoding="async"
+            quality={78}
             sizes="100vw"
             placeholder="blur"
             referrerPolicy="no-referrer"
@@ -49,6 +53,10 @@ export default function HalfAndHalfSection() {
           align="center"
           dark
         />
+
+        <div className="mx-auto mt-6 w-20">
+          <ArchitecturalRule className="bg-[#F5C300]" delay={0.12} />
+        </div>
 
         <RevealBlock delay={0.1} className="mt-6 flex flex-col items-center">
           <p className="max-w-[46ch] text-[16px] sm:text-[18px] leading-relaxed text-[#FFFFFF]/90">

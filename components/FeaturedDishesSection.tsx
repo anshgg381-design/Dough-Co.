@@ -76,24 +76,28 @@ export default function FeaturedDishesSection() {
                 initial={
                   prefersReduced
                     ? { opacity: 1 }
-                    : { opacity: 0, y: 24 }
+                    : { opacity: 0, y: 26, scale: 0.985 }
                 }
-                whileInView={{ opacity: 1, y: 0 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                whileHover={prefersReduced ? undefined : { y: -3 }}
                 viewport={{ once: true, amount: 'some' }}
                 transition={{
-                  duration: prefersReduced ? 0 : 0.72,
+                  duration: prefersReduced ? 0 : 0.65,
                   delay: prefersReduced ? 0 : (index % 3) * 0.08,
                   ease: EDITORIAL_EASE,
                 }}
-                className="group border-r border-b border-[#0B0A09] bg-[#FFFFFF] flex flex-col transition-colors duration-300 hover:bg-[#FAF7F2]"
+                className="group relative border-r border-b border-[#0B0A09] bg-[#FFFFFF] flex flex-col transition-colors duration-300 hover:bg-[#FAF7F2]"
               >
                 <div className="relative aspect-[3/2] w-full overflow-hidden border-b border-[#0B0A09] bg-[#EFE9DF]">
-                  <HoverScaleFrame scale={1.05}>
+                  <HoverScaleFrame scale={1.06}>
                     <Image
                       src={photo}
                       alt={dish.name}
                       fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      loading="eager"
+                      decoding="async"
+                      quality={78}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 460px"
                       placeholder="blur"
                       referrerPolicy="no-referrer"
                       className="object-cover"
@@ -110,7 +114,7 @@ export default function FeaturedDishesSection() {
                           {dish.name}
                         </h3>
                       </div>
-                      <span className="text-[16px] font-semibold tabular-nums text-[#0B0A09] shrink-0">
+                      <span className="text-[16px] font-semibold tabular-nums text-[#0B0A09] shrink-0 transition-transform duration-200 group-hover:scale-105 group-hover:text-[#8C6200]">
                         {formatINR(dish.price)}
                       </span>
                     </div>
@@ -122,6 +126,11 @@ export default function FeaturedDishesSection() {
                     )}
                   </div>
                 </div>
+
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-[#D99B00] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100"
+                />
               </motion.li>
             );
           })}

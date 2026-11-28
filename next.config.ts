@@ -8,8 +8,13 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Allow access to remote image placeholder and Instagram media.
+  // Allow access to remote image placeholder and Instagram media with fast modern formats.
   images: {
+    formats: ['image/avif', 'image/webp'],
+    qualities: [75, 78, 85],
+    minimumCacheTTL: 2592000,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1440],
+    imageSizes: [64, 96, 128, 256, 384, 512],
     remotePatterns: [
       {
         protocol: 'https',

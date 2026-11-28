@@ -1,19 +1,14 @@
 'use client';
 
-import { motion, useReducedMotion, useScroll, useSpring } from 'motion/react';
+import { motion, useReducedMotion, useScroll } from 'motion/react';
 
 /**
- * Thin, minimal top-of-window scroll progress indicator inspired by
- * Le Pain Quotidien's restrained editorial aesthetic.
+ * Thin, minimal top-of-window scroll progress indicator driven directly
+ * by native scrollYProgress for 1:1 lag-free responsiveness with zero idle RAF loops.
  */
 export default function ScrollProgressBar() {
   const prefersReduced = useReducedMotion();
   const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 220,
-    damping: 32,
-    restDelta: 0.001,
-  });
 
   if (prefersReduced) {
     return null;
@@ -27,8 +22,8 @@ export default function ScrollProgressBar() {
     >
       <motion.div
         data-testid="scroll-progress-bar"
-        style={{ scaleX, transformOrigin: '0% 50%' }}
-        className="h-full w-full bg-[#D99B00] will-change-transform"
+        style={{ scaleX: scrollYProgress, transformOrigin: '0% 50%' }}
+        className="h-full w-full bg-[#D99B00]"
       />
     </div>
   );

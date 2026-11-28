@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ArrowUpRight, Instagram } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { FALLBACK_INSTAGRAM_POSTS, type InstagramPost } from '@/data/instagram';
+import { localImagesByPath } from '@/data/images';
 import { siteConfig } from '@/data/siteConfig';
 import {
   EDITORIAL_EASE,
@@ -72,16 +73,16 @@ export default function InstagramFeedSection() {
               in Model Town, Panipat.
             </p>
 
-            {/* Subtle live feed status pill badge */}
-            <div className="mt-4 inline-flex items-center gap-2 border border-[#0B0A09]/20 bg-[#FFFFFF] px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0B0A09]">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#1E6B3A] opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#1E6B3A]" />
-              </span>
+            {/* Clean unboxed typographic Instagram metadata */}
+            <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#8C6200]">
               <span>
-                {source === 'live' ? 'Live Instagram Feed' : 'Instagram Updates'} · {siteConfig.instagram.handle}
+                {source === 'live' ? 'Live Instagram Feed' : 'Instagram Updates'}
               </span>
-            </div>
+              <span aria-hidden="true" className="mx-2 text-[#0B0A09]/35">
+                ·
+              </span>
+              <span className="text-[#0B0A09]">{siteConfig.instagram.handle}</span>
+            </p>
           </RevealBlock>
         </div>
 
@@ -90,71 +91,81 @@ export default function InstagramFeedSection() {
           data-testid="instagram-feed-grid"
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 border-t border-l border-[#0B0A09] bg-[#FFFFFF]"
         >
-          {posts.slice(0, 6).map((post, index) => (
-            <motion.a
-              key={post.id}
-              href={post.permalink}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`View Instagram post: ${post.caption.slice(0, 80)}...`}
-              data-testid="instagram-post-card"
-              data-cursor="view"
-              data-cursor-label="INSTAGRAM"
-              initial={
-                prefersReduced
-                  ? { opacity: 1 }
-                  : { opacity: 0, y: 20 }
-              }
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 'some' }}
-              transition={{
-                duration: prefersReduced ? 0 : 0.65,
-                delay: prefersReduced ? 0 : index * 0.06,
-                ease: EDITORIAL_EASE,
-              }}
-              className="group relative aspect-square w-full overflow-hidden border-r border-b border-[#0B0A09] bg-[#1A1816] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D99B00]"
-            >
-              {/* Photo layer with smooth hover zoom */}
-              <motion.div
-                whileHover={prefersReduced ? undefined : { scale: 1.06 }}
-                transition={{ duration: 0.6, ease: EDITORIAL_EASE }}
-                className="relative h-full w-full will-change-transform"
+          {posts.slice(0, 6).map((post, index) => {
+            const localPhoto = localImagesByPath[post.mediaUrl];
+            return (
+              <motion.a
+                key={post.id}
+                href={post.permalink}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`View Instagram post: ${post.caption.slice(0, 80)}...`}
+                data-testid="instagram-post-card"
+                data-cursor="view"
+                data-cursor-label="INSTAGRAM"
+                initial={
+                  prefersReduced
+                    ? { opacity: 1 }
+                    : { opacity: 0, y: 20, scale: 0.97 }
+                }
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, amount: 'some' }}
+                transition={{
+                  duration: prefersReduced ? 0 : 0.56,
+                  delay: prefersReduced ? 0 : index * 0.055,
+                  ease: EDITORIAL_EASE,
+                }}
+                className="group relative aspect-square w-full overflow-hidden border-r border-b border-[#0B0A09] bg-[#1A1816] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D99B00]"
               >
-                <Image
-                  src={post.mediaUrl}
-                  alt={post.caption || 'Dough & Co. Instagram photo'}
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                  placeholder="blur"
-                  blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UxREJDRiIvPjwvc3ZnPg=="
-                  referrerPolicy="no-referrer"
-                  className="object-cover"
-                />
-              </motion.div>
+                {/* Photo layer with smooth hover zoom */}
+                <motion.div
+                  whileHover={prefersReduced ? undefined : { scale: 1.07 }}
+                  transition={{ duration: 0.45, ease: EDITORIAL_EASE }}
+                  className="relative h-full w-full"
+                >
+                  <Image
+                    src={localPhoto ?? post.mediaUrl}
+                    alt={post.caption || 'Dough & Co. Instagram photo'}
+                    fill
+                    loading="eager"
+                    decoding="async"
+                    quality={75}
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
+                    placeholder="blur"
+                    blurDataURL={
+                      localPhoto
+                        ? undefined
+                        : 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UxREJDRiIvPjwvc3ZnPg=='
+                    }
+                    referrerPolicy="no-referrer"
+                    className="object-cover"
+                  />
+                </motion.div>
 
-              {/* Editorial dark scrim overlay appearing on hover */}
+              {/* Editorial dark scrim overlay appearing on hover with vertical content slide-up */}
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 flex flex-col justify-between bg-[#0B0A09]/82 p-4 text-[#FFFFFF] opacity-0 transition-opacity duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-100"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between -translate-y-1.5 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0">
                   <Instagram className="h-4 w-4 text-[#F5C300]" />
                   <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#F5C300]">
                     {post.shortDate}
                   </span>
                 </div>
 
-                <p className="line-clamp-3 text-[11px] leading-snug text-[#FFFFFF]/90">
+                <p className="line-clamp-3 translate-y-2 text-[11px] leading-snug text-[#FFFFFF]/90 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0">
                   {post.caption}
                 </p>
 
-                <div className="flex items-center justify-between border-t border-[#FFFFFF]/20 pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#FFFFFF]">
+                <div className="flex items-center justify-between border-t border-[#FFFFFF]/20 pt-2 translate-y-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#FFFFFF] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0">
                   <span>{post.location || 'Model Town'}</span>
                   <ArrowUpRight className="h-3 w-3 text-[#F5C300] transition-transform duration-200 group-hover:translate-x-[2px] group-hover:-translate-y-[2px]" />
                 </div>
               </div>
-            </motion.a>
-          ))}
+              </motion.a>
+            );
+          })}
         </div>
 
         {/* Bottom action bar */}

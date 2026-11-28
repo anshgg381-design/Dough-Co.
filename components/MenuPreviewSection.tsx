@@ -94,7 +94,7 @@ export default function MenuPreviewSection() {
     >
       {/* Signature lepainquotidien.com 50/50 sharp hairline-bordered editorial split grid */}
       <div className="border-t border-l border-r border-[#0B0A09] bg-[#FFFFFF]">
-        {SPLIT_ROWS.map((row) => (
+        {SPLIT_ROWS.map((row, index) => (
           <div
             key={row.category}
             data-testid={`menu-split-${row.category}`}
@@ -108,13 +108,20 @@ export default function MenuPreviewSection() {
                   : 'lg:order-1 lg:border-r border-[#0B0A09]'
               }`}
             >
-              <HoverScaleFrame scale={1.045}>
-                <ParallaxFrame className="w-full h-full min-h-[340px] sm:min-h-[460px] lg:min-h-[560px] bg-[#1A1816]">
+              <HoverScaleFrame scale={1.05}>
+                <ParallaxFrame
+                  className="w-full h-full min-h-[340px] sm:min-h-[460px] lg:min-h-[560px] bg-[#1A1816]"
+                  scaleRange={[1.13, 1.04]}
+                  yRange={index % 2 === 0 ? [-24, 24] : [-20, 20]}
+                >
                   <Image
                     src={row.image}
                     alt={row.imageAlt}
                     fill
-                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    loading="eager"
+                    decoding="async"
+                    quality={78}
+                    sizes="(max-width: 1024px) 100vw, 700px"
                     placeholder="blur"
                     referrerPolicy="no-referrer"
                     className={`object-cover ${row.objectPosition}`}

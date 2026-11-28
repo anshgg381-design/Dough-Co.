@@ -290,7 +290,7 @@ export default function FullMenuSection({
             <div
               role="group"
               aria-label="Filter by diet"
-              className="inline-flex items-center border border-[#0B0A09] divide-x divide-[#0B0A09] self-start sm:self-auto"
+              className="relative inline-flex items-center border border-[#0B0A09] divide-x divide-[#0B0A09] self-start sm:self-auto"
             >
               {DIETARY_OPTIONS.map((option) => {
                 const selected = dietary === option.id;
@@ -300,13 +300,23 @@ export default function FullMenuSection({
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setDietary(option.id)}
-                    className={`rounded-none px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors duration-150 ${
+                    className={`relative rounded-none px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors duration-200 ${
                       selected
-                        ? 'bg-[#0B0A09] text-[#FFFFFF]'
+                        ? 'text-[#FFFFFF]'
                         : 'bg-[#FFFFFF] text-[#0B0A09] hover:bg-[#FAF7F2]'
                     }`}
                   >
-                    {option.label}
+                    {selected && (
+                      <motion.span
+                        layoutId="dietary-filter-bg"
+                        transition={{
+                          duration: prefersReduced ? 0 : 0.22,
+                          ease: EDITORIAL_EASE,
+                        }}
+                        className="absolute inset-0 bg-[#0B0A09]"
+                      />
+                    )}
+                    <span className="relative z-10">{option.label}</span>
                   </button>
                 );
               })}
@@ -402,15 +412,18 @@ export default function FullMenuSection({
                         </div>
 
                         {realPhoto && !printPreview && (
-                          <div className="relative w-[80px] h-[80px] shrink-0 overflow-hidden rounded-none border border-[#0B0A09] bg-[#ECE6DC] print:hidden">
+                          <div className="group/thumb relative w-[80px] h-[80px] shrink-0 overflow-hidden rounded-none border border-[#0B0A09] bg-[#ECE6DC] print:hidden">
                             <Image
                               src={realPhoto}
                               alt={item.name}
                               fill
+                              loading="eager"
+                              decoding="async"
+                              quality={75}
                               sizes="80px"
                               placeholder="blur"
                               referrerPolicy="no-referrer"
-                              className="object-cover"
+                              className="object-cover transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/thumb:scale-110"
                             />
                           </div>
                         )}

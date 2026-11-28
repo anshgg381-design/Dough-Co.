@@ -9,6 +9,7 @@ import { siteConfig } from '@/data/siteConfig';
 import {
   EDITORIAL_EASE,
   HoverScaleFrame,
+  ParallaxFrame,
   RevealBlock,
   ScriptOverlapHeading,
 } from '@/components/MotionPrimitives';
@@ -54,28 +55,38 @@ export default function CustomerReviewsSection() {
                 initial={
                   prefersReduced
                     ? { opacity: 1 }
-                    : { opacity: 0, y: 24 }
+                    : { opacity: 0, y: 26, scale: 0.985 }
                 }
-                whileInView={{ opacity: 1, y: 0 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                whileHover={prefersReduced ? undefined : { y: -3 }}
                 viewport={{ once: true, amount: 'some' }}
                 transition={{
-                  duration: prefersReduced ? 0 : 0.72,
+                  duration: prefersReduced ? 0 : 0.68,
                   delay: prefersReduced ? 0 : (index % 2) * 0.1,
                   ease: EDITORIAL_EASE,
                 }}
-                className="group border-r border-b border-[#0B0A09] bg-[#FFFFFF] flex flex-col transition-colors duration-300 hover:bg-[#FAF7F2]"
+                className="group relative border-r border-b border-[#0B0A09] bg-[#FFFFFF] flex flex-col transition-colors duration-300 hover:bg-[#FAF7F2]"
               >
                 <div className="relative aspect-[16/10] w-full overflow-hidden border-b border-[#0B0A09] bg-[#EFE9DF]">
-                  <HoverScaleFrame scale={1.045}>
-                    <Image
-                      src={photo}
-                      alt={review.photoAlt}
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                      placeholder="blur"
-                      referrerPolicy="no-referrer"
-                      className="object-cover"
-                    />
+                  <HoverScaleFrame scale={1.05}>
+                    <ParallaxFrame
+                      className="w-full h-full"
+                      scaleRange={[1.1, 1.03]}
+                      yRange={[-16, 16]}
+                    >
+                      <Image
+                        src={photo}
+                        alt={review.photoAlt}
+                        fill
+                        loading="eager"
+                        decoding="async"
+                        quality={78}
+                        sizes="(max-width: 1024px) 100vw, 620px"
+                        placeholder="blur"
+                        referrerPolicy="no-referrer"
+                        className="object-cover"
+                      />
+                    </ParallaxFrame>
                   </HoverScaleFrame>
                 </div>
 
@@ -88,11 +99,29 @@ export default function CustomerReviewsSection() {
                         className="inline-flex items-center gap-1"
                       >
                         {Array.from({ length: review.rating }).map((_, starIdx) => (
-                          <Star
+                          <motion.span
                             key={starIdx}
-                            aria-hidden="true"
-                            className="w-4 h-4 fill-[#D99B00] text-[#D99B00]"
-                          />
+                            initial={
+                              prefersReduced
+                                ? { opacity: 1 }
+                                : { opacity: 0, scale: 0.4, rotate: -18 }
+                            }
+                            whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                            viewport={{ once: true, amount: 0.4 }}
+                            transition={{
+                              duration: prefersReduced ? 0 : 0.36,
+                              delay: prefersReduced
+                                ? 0
+                                : 0.14 + starIdx * 0.055,
+                              ease: EDITORIAL_EASE,
+                            }}
+                            className="inline-flex"
+                          >
+                            <Star
+                              aria-hidden="true"
+                              className="w-4 h-4 fill-[#D99B00] text-[#D99B00]"
+                            />
+                          </motion.span>
                         ))}
                       </div>
                       <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#46423D]">
@@ -119,6 +148,11 @@ export default function CustomerReviewsSection() {
                     </p>
                   </footer>
                 </div>
+
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-[#D99B00] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100"
+                />
               </motion.article>
             );
           })}

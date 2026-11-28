@@ -49,3 +49,15 @@ export const menuImagesByPath: Record<string, StaticImageData> = {
   '/images/zomato/truffle-wild-mushroom-spaghetti-pasta.jpg': truffleMushroomSpaghetti,
   '/images/zomato/chicken-bolognese-pasta.jpeg': chickenBolognese,
 };
+
+export const localImagesByPath: Record<string, StaticImageData> = {
+  ...menuImagesByPath,
+  '/images/zomato/zomato-cover.jpeg': heroPizza,
+  '/assets/aistudio/imgi_33_858088570_17949135600347467_3931433580537218318_n_50fca20d.jpg':
+    heroTakeaway,
+  '/assets/aistudio/images__1__ab49a1e8.jpeg': heroStorefront,
+  '/assets/aistudio/unnamed_e566e6b1.webp': storefront,
+  '/assets/aistudio/unnamed__1__b2fb7931.webp': interiorBar,
+  '/assets/aistudio/unnamed__2__3113b3a6.webp': diningCorner,
+  '/assets/aistudio/unnamed__3__fae16493.webp': tableSetting,
+};
